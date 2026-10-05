@@ -1,69 +1,186 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+
+type Court = {
+  name: string;
+  place: string;
+  crowd: "Quiet" | "Busy" | "Packed" | "Closed";
+  note: string;
+  ago: string;
+};
+
+const COURTS: Court[] = [
+  { name: "Main canteen", place: "Block A", crowd: "Quiet", note: "Dosa counter just opened", ago: "2 min ago" },
+  { name: "Library cafe", place: "Library, ground floor", crowd: "Busy", note: "Filter coffee queue ~5 min", ago: "6 min ago" },
+  { name: "Hostel mess", place: "Boys hostel", crowd: "Packed", note: "Biryani sold out", ago: "11 min ago" },
+  { name: "Juice corner", place: "Near the gate", crowd: "Closed", note: "Back at 4 pm", ago: "40 min ago" },
+];
+
+const TONE: Record<Court["crowd"], string> = {
+  Quiet: "var(--term-green)",
+  Busy: "var(--term-amber)",
+  Packed: "var(--term-rose)",
+  Closed: "var(--term-muted)",
+};
 
 export default function Home() {
+  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+
+    if (!email.includes("@")) return setError("Enter your college email address.");
+    if (password.length < 8) return setError("Password must be at least 8 characters.");
+
+    setLoading(true);
+    try {
+      const endpoint = mode === "login" ? "/api/login" : "/api/register";
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Authentication failed.");
+      }
+
+      console.log(mode, "success", data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not sign you in. Check your details and try again.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <main className="min-h-screen px-5 py-10 md:px-12 md:py-16">
+      <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1.3fr_1fr] lg:gap-16">
+        {/* Left: pitch + live board preview */}
+        <section>
+          <p className="terminal-text-glow text-sm text-[var(--term-green)]">
+            <span aria-hidden>$ </span>campus-eats status
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+          <h1 className="mt-4 max-w-xl text-3xl font-bold leading-tight md:text-5xl">
+            Check the food court before you walk there.
+          </h1>
+          <p className="mt-4 max-w-md text-sm leading-relaxed text-[var(--term-muted)] md:text-base">
+            Students post how busy each food court is and what&apos;s sold out. Sign in to see
+            live updates and add your own.
+          </p>
+
+          <ul className="mt-8 space-y-3" aria-label="Example food court statuses">
+            {COURTS.map((c, i) => (
+              <li
+                key={c.name}
+                className={`${i === 0 ? "terminal-box-active" : "terminal-box"} flex items-start justify-between gap-4 p-4 transition-colors hover:bg-[var(--term-surface-hover)]`}
+              >
+                <div className="min-w-0">
+                  <p className="font-semibold">{c.name}</p>
+                  <p className="text-xs text-[var(--term-muted)]">{c.place}</p>
+                  <p className="mt-2 text-sm">{c.note}</p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <p className="flex items-center justify-end gap-2 text-sm font-semibold" style={{ color: TONE[c.crowd] }}>
+                    <span className="inline-block h-2 w-2 rounded-full" style={{ background: TONE[c.crowd] }} aria-hidden />
+                    {c.crowd}
+                  </p>
+                  <p className="mt-1 text-xs text-[var(--term-muted)]">{c.ago}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        {/* Right: auth card */}
+        <section className="lg:pt-24">
+          <div className="terminal-box p-6 md:p-8">
+            <div className="mb-6 flex gap-1 rounded-md border border-[var(--term-border)] p-1" role="tablist">
+              {(["login", "signup"] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === m}
+                  onClick={() => { setMode(m); setError(""); }}
+                  className={`flex-1 rounded px-3 py-2 text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--term-green)] ${
+                    mode === m
+                      ? "bg-[var(--term-green-glow)] text-[var(--term-green)]"
+                      : "text-[var(--term-muted)] hover:text-[var(--term-fg)]"
+                  }`}
+                >
+                  {m === "login" ? "Log in" : "Create account"}
+                </button>
+              ))}
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+              <div>
+                <label htmlFor="email" className="mb-1.5 block text-sm text-[var(--term-muted)]">
+                  College email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="you@college.edu"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="terminal-input w-full rounded-md px-3 py-2.5 text-sm"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="password" className="mb-1.5 block text-sm text-[var(--term-muted)]">
+                  Password
+                </label>
+                <input
+                  id="password"
+                  type="password"
+                  autoComplete={mode === "login" ? "current-password" : "new-password"}
+                  placeholder="At least 8 characters"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="terminal-input w-full rounded-md px-3 py-2.5 text-sm"
+                />
+              </div>
+
+              {error && (
+                <p role="alert" className="text-sm text-[var(--term-rose)]">
+                  {error}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full rounded-md bg-[var(--term-green)] px-4 py-2.5 text-sm font-semibold text-[var(--term-bg)] transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--term-green)] disabled:opacity-50"
+              >
+                {loading ? "Working..." : mode === "login" ? "Log in" : "Create account"}
+              </button>
+            </form>
+
+            <p className="mt-5 text-center text-xs text-[var(--term-muted)]">
+              {mode === "login" ? "New here? " : "Already have an account? "}
+              <button
+                type="button"
+                onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); }}
+                className="text-[var(--term-green)] underline underline-offset-4"
+              >
+                {mode === "login" ? "Create an account" : "Log in"}
+              </button>
+            </p>
+          </div>
+        </section>
+      </div>
+    </main>
   );
 }
