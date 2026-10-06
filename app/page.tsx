@@ -12,10 +12,10 @@ type Court = {
 };
 
 const COURTS: Court[] = [
-  { name: "Main canteen", place: "Block A", crowd: "Quiet", note: "Dosa counter just opened", ago: "2 min ago" },
-  { name: "Library cafe", place: "Library, ground floor", crowd: "Busy", note: "Filter coffee queue ~5 min", ago: "6 min ago" },
-  { name: "Hostel mess", place: "Boys hostel", crowd: "Packed", note: "Biryani sold out", ago: "11 min ago" },
-  { name: "Juice corner", place: "Near the gate", crowd: "Closed", note: "Back at 4 pm", ago: "40 min ago" },
+  { name: "Magna canteen", place: "GEC 1", crowd: "Quiet", note: "Dosa counter just opened", ago: "2 min ago" },
+  { name: "Magna cafe", place: " B2", crowd: "Busy", note: " coffee queue ~5 min", ago: "6 min ago" },
+  { name: "Arena", place: "Gate-2", crowd: "Packed", note: "Biryani sold out", ago: "11 min ago" },
+  { name: "Juice corner", place: "MAGNA", crowd: "Closed", note: "Back at 4 pm", ago: "40 min ago" },
 ];
 
 const TONE: Record<Court["crowd"], string> = {
@@ -163,7 +163,7 @@ export default function Home() {
               {mode === "signup" && (
                 <div>
                   <label htmlFor="email" className="mb-1.5 block text-sm text-[var(--term-muted)]">Email</label>
-                  <input id="email" type="email" autoComplete="email" placeholder="you@college.edu" value={email} onChange={(e) => setEmail(e.target.value)} className="terminal-input w-full rounded-md px-3 py-2.5 text-sm" />
+                  <input id="email" type="email" autoComplete="email" placeholder="you@mail.com" value={email} onChange={(e) => setEmail(e.target.value)} className="terminal-input w-full rounded-md px-3 py-2.5 text-sm" />
                 </div>
               )}
 
