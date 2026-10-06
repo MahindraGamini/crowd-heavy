@@ -6,7 +6,7 @@ import { createSession } from "../../lib/session";
 import { User } from "../../models/user";
 
 export async function POST(req: Request) {
-  const { username, email, password } = await req.json();
+  const { username, email, password, confirmPassword } = await req.json();
   const clean = String(username || "").trim().toLowerCase();
   const cleanEmail = String(email || "").trim().toLowerCase();
 
@@ -17,11 +17,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Enter a valid email address." }, { status: 400 });
   }
 
-  if (String(password || "").length < 8) {
+  if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/.test(String(password || ""))) {
     return NextResponse.json(
-      { error: "Password must be at least 8 characters." },
+      { error: "Password must be at least 8 characters and include uppercase, lowercase, number, and special character." },
       { status: 400 }
     );
+  }
+  if (password !== confirmPassword) {
+    return NextResponse.json({ error: "Passwords do not match." }, { status: 400 });
   }
 
   await connectDB();

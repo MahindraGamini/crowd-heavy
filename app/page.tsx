@@ -30,6 +30,7 @@ export default function Home() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -42,7 +43,8 @@ export default function Home() {
 
     if (!/^[a-z0-9_]{3,30}$/i.test(username.trim())) return setError("Username must be 3–30 characters: letters, numbers, or underscores.");
     if (mode === "signup" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setError("Enter a valid email address.");
-    if (password.length < 8) return setError("Password must be at least 8 characters.");
+    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/.test(password)) return setError("Password must be at least 8 characters and include uppercase, lowercase, number, and special character.");
+    if (mode === "signup" && password !== confirmPassword) return setError("Passwords do not match.");
 
     setLoading(true);
     try {
@@ -50,7 +52,7 @@ export default function Home() {
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: username.trim(), email: email.trim(), password }),
+        body: JSON.stringify({ username: username.trim(), email: email.trim(), password, confirmPassword }),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -63,6 +65,7 @@ export default function Home() {
         setMessage("Account created successfully. Log in to continue to the dashboard.");
         setMode("login");
         setPassword("");
+        setConfirmPassword("");
       } else {
         router.push("/dashboard");
       }
@@ -152,6 +155,13 @@ export default function Home() {
 
               {mode === "signup" && (
                 <div>
+                  <label htmlFor="confirmPassword" className="mb-1.5 block text-sm text-[var(--term-muted)]">Confirm password</label>
+                  <input id="confirmPassword" type="password" autoComplete="new-password" placeholder="Re-enter your password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="terminal-input w-full rounded-md px-3 py-2.5 text-sm" />
+                </div>
+              )}
+
+              {mode === "signup" && (
+                <div>
                   <label htmlFor="email" className="mb-1.5 block text-sm text-[var(--term-muted)]">Email</label>
                   <input id="email" type="email" autoComplete="email" placeholder="you@college.edu" value={email} onChange={(e) => setEmail(e.target.value)} className="terminal-input w-full rounded-md px-3 py-2.5 text-sm" />
                 </div>
@@ -165,11 +175,12 @@ export default function Home() {
                   id="password"
                   type="password"
                   autoComplete={mode === "login" ? "current-password" : "new-password"}
-                  placeholder="At least 8 characters"
+                  placeholder="Strong password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="terminal-input w-full rounded-md px-3 py-2.5 text-sm"
                 />
+                {mode === "signup" && <p className="mt-1 text-xs text-[var(--term-muted)]">Use 8+ characters with uppercase, lowercase, number, and special character.</p>}
               </div>
 
               {error && (
