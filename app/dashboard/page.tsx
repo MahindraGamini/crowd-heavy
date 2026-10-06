@@ -1,9 +1,9 @@
 // app/dashboard/page.tsx
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLiveCourt } from "../lib/useLiveCourt";
-import { io } from "socket.io-client";
+import { subscribeToRealtimeEvents } from "../lib/realtime-client";
 
 const LEVELS = ["Quiet", "Busy", "Packed", "Closed"] as const;
 
@@ -12,11 +12,16 @@ export default function Dashboard() {
   const router = useRouter();
   const [notes, setNotes] = useState<Record<string, { _id: string; username: string; food: string; note: string; createdAt: string }[]>>({});
   const [drafts, setDrafts] = useState<Record<string, { food: string; note: string }>>({});
+  const refreshNotesRef = useRef<() => Promise<void>>(async () => {});
 
   const refreshNotes = useCallback(async () => {
     const entries = await Promise.all(courts.map(async (court) => [court._id, await fetch(`/api/foodcourt/${court._id}/notes`).then((r) => r.json())] as const));
     setNotes(Object.fromEntries(entries));
   }, [courts]);
+
+  useEffect(() => {
+    refreshNotesRef.current = refreshNotes;
+  }, [refreshNotes]);
 
   useEffect(() => {
     fetch("/api/session").then((response) => {
@@ -25,13 +30,30 @@ export default function Dashboard() {
   }, [router]);
 
   useEffect(() => {
-    const load = () => { if (courts.length) void refreshNotes(); };
-    load();
-    const socket = io();
-    socket.on("note:update", ({ courtId, note }) => setNotes((current) => ({ ...current, [courtId]: [note, ...(current[courtId] ?? [])] })));
-    socket.on("notes:refresh", refreshNotes);
-    return () => { socket.disconnect(); };
-  }, [courts.length, refreshNotes]);
+    if (courts.length) void refreshNotesRef.current();
+  }, [courts.length]);
+
+  useEffect(() => subscribeToRealtimeEvents((event) => {
+    if (event.name === "note:update") {
+      const { courtId, note } = event.data;
+      setNotes((current) => ({ ...current, [courtId]: [note, ...(current[courtId] ?? [])] }));
+    }
+  }), []);
+
+  useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout>;
+    const refreshAtMidnight = () => {
+      const nextRefresh = new Date();
+      nextRefresh.setDate(nextRefresh.getDate() + 1);
+      nextRefresh.setHours(0, 0, 0, 50);
+      timeout = setTimeout(() => {
+        void refreshNotesRef.current();
+        refreshAtMidnight();
+      }, nextRefresh.getTime() - Date.now());
+    };
+    refreshAtMidnight();
+    return () => clearTimeout(timeout);
+  }, []);
 
   async function report(id: string, crowd: string) {
     const res = await fetch(`/api/foodcourt/${id}`, {

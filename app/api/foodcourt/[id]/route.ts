@@ -3,7 +3,7 @@ import {connectDB} from "../../../lib/db";
 import {Report} from "../../../models/Report";
 import {getSession} from "../../../lib/session";
 import {FoodCourt} from "../../../models/FoodCourt";
-import {getIO} from "../../../lib/socket";
+import {publishRealtimeEvent} from "../../../lib/realtime";
 const CROWD = ["Quiet", "Busy", "Packed", "Closed"];
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -26,7 +26,7 @@ const userId = await getSession();
   if (!court) return NextResponse.json({ error: "Court not found." }, { status: 404 });
 
   
-  getIO()?.emit("court:update", JSON.parse(JSON.stringify(court)));
+  await publishRealtimeEvent("court:update", JSON.parse(JSON.stringify(court)));
 return NextResponse.json({ ok: true });
 
 }

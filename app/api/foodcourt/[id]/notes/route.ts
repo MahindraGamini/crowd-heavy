@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "../../../../lib/db";
 import { getSession } from "../../../../lib/session";
-import { getIO } from "../../../../lib/socket";
+import { publishRealtimeEvent } from "../../../../lib/realtime";
 import { Report } from "../../../../models/Report";
 import { FoodCourt } from "../../../../models/FoodCourt";
 import { User } from "../../../../models/user";
@@ -45,6 +45,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const review = await Report.create({ court: id, user: userId, crowd: "Quiet", food, note });
   const user = await User.findById(userId).select("username").lean();
   const payload = { _id: review._id, username: user?.username ?? "Anonymous", food: review.food, note: review.note, createdAt: review.createdAt };
-  getIO()?.emit("note:update", { courtId: id, note: JSON.parse(JSON.stringify(payload)) });
+  await publishRealtimeEvent("note:update", { courtId: id, note: JSON.parse(JSON.stringify(payload)) });
   return NextResponse.json(payload, { status: 201 });
 }
