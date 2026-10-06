@@ -6,13 +6,13 @@ import {FoodCourt} from "../../../models/FoodCourt";
 import {getIO} from "../../../lib/socket";
 const CROWD = ["Quiet", "Busy", "Packed", "Closed"];
 
-export async function POST(req: Request, {params}: {params: {id: number}}) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
 
 const userId = await getSession();
   if (!userId) {
     return NextResponse.json({error: "Unauthorized"}, {status: 401});
   }
-   const { id } = await params;
+  const { id } = await params;
   const { crowd, note = "" } = await req.json();
   if (!CROWD.includes(crowd))
     return NextResponse.json({ error: "Invalid crowd level." }, { status: 400 });

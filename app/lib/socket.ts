@@ -1,4 +1,8 @@
 // lib/socket.ts
 import type { Server } from "socket.io";
 
-export const getIO = () => (globalThis as any).io as Server | undefined;
+declare global {
+  var io: Server | undefined;
+}
+
+export const getIO = () => globalThis.io;

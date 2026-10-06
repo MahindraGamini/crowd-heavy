@@ -4,7 +4,6 @@ import next from "next";
 import { Server } from "socket.io";
 
 const production = process.argv.includes("--production") || process.env.NODE_ENV === "production";
-if (production) process.env.NODE_ENV = "production";
 
 const dev = !production;
 const port = Number.parseInt(process.env.PORT ?? "3000", 10);
@@ -16,12 +15,21 @@ app.prepare().then(() => {
   const io = new Server(httpServer);
 
   // Share io with API routes (they run in this same process)
-  (globalThis as any).io = io;
+  globalThis.io = io;
 
   io.on("connection", (socket) => {
     console.log("client connected", socket.id);
     socket.on("disconnect", () => console.log("client left", socket.id));
   });
+
+  const emitDailyRefresh = () => {
+    io.emit("notes:refresh");
+    const next = new Date();
+    next.setDate(next.getDate() + 1);
+    next.setHours(0, 0, 0, 50);
+    setTimeout(emitDailyRefresh, next.getTime() - Date.now());
+  };
+  emitDailyRefresh();
 
   httpServer.listen(port, () => console.log(`http://localhost:${port}`));
 });

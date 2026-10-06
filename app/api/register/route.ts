@@ -6,8 +6,16 @@ import { createSession } from "../../lib/session";
 import { User } from "../../models/user";
 
 export async function POST(req: Request) {
-  const { email, password } = await req.json();
-  const clean = String(email || "").trim().toLowerCase();
+  const { username, email, password } = await req.json();
+  const clean = String(username || "").trim().toLowerCase();
+  const cleanEmail = String(email || "").trim().toLowerCase();
+
+  if (!/^[a-z0-9_]{3,30}$/.test(clean)) {
+    return NextResponse.json({ error: "Username must be 3–30 characters: letters, numbers, or underscores." }, { status: 400 });
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+    return NextResponse.json({ error: "Enter a valid email address." }, { status: 400 });
+  }
 
   if (String(password || "").length < 8) {
     return NextResponse.json(
@@ -18,16 +26,17 @@ export async function POST(req: Request) {
 
   await connectDB();
 
-  const existingUser = await User.findOne({ email: clean });
+  const existingUser = await User.findOne({ $or: [{ username: clean }, { email: cleanEmail }] });
   if (existingUser) {
     return NextResponse.json(
-      { error: "An account with this email already exists." },
+      { error: existingUser.username === clean ? "That username is already taken." : "An account with that email already exists." },
       { status: 409 }
     );
   }
 
   const newUser = await User.create({
-    email: clean,
+    username: clean,
+    email: cleanEmail,
     passwordHash: await bcrypt.hash(String(password), 12),
   });
 

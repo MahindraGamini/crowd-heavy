@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 type Court = {
   name: string;
@@ -26,16 +27,21 @@ const TONE: Record<Court["crowd"], string> = {
 
 export default function Home() {
   const [mode, setMode] = useState<"login" | "signup">("login");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setMessage("");
 
-    if (!email.includes("@")) return setError("Enter your college email address.");
+    if (!/^[a-z0-9_]{3,30}$/i.test(username.trim())) return setError("Username must be 3–30 characters: letters, numbers, or underscores.");
+    if (mode === "signup" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setError("Enter a valid email address.");
     if (password.length < 8) return setError("Password must be at least 8 characters.");
 
     setLoading(true);
@@ -44,7 +50,7 @@ export default function Home() {
       const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ username: username.trim(), email: email.trim(), password }),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -53,7 +59,13 @@ export default function Home() {
         throw new Error(data?.error || "Authentication failed.");
       }
 
-      console.log(mode, "success", data);
+      if (mode === "signup") {
+        setMessage("Account created successfully. Log in to continue to the dashboard.");
+        setMode("login");
+        setPassword("");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not sign you in. Check your details and try again.");
     } finally {
@@ -124,19 +136,26 @@ export default function Home() {
 
             <form onSubmit={handleSubmit} className="space-y-4" noValidate>
               <div>
-                <label htmlFor="email" className="mb-1.5 block text-sm text-[var(--term-muted)]">
-                  College email
+                <label htmlFor="username" className="mb-1.5 block text-sm text-[var(--term-muted)]">
+                  Username
                 </label>
                 <input
-                  id="email"
-                  type="email"
-                  autoComplete="email"
-                  placeholder="you@college.edu"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="username"
+                  type="text"
+                  autoComplete="username"
+                  placeholder="your_username"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
                   className="terminal-input w-full rounded-md px-3 py-2.5 text-sm"
                 />
               </div>
+
+              {mode === "signup" && (
+                <div>
+                  <label htmlFor="email" className="mb-1.5 block text-sm text-[var(--term-muted)]">Email</label>
+                  <input id="email" type="email" autoComplete="email" placeholder="you@college.edu" value={email} onChange={(e) => setEmail(e.target.value)} className="terminal-input w-full rounded-md px-3 py-2.5 text-sm" />
+                </div>
+              )}
 
               <div>
                 <label htmlFor="password" className="mb-1.5 block text-sm text-[var(--term-muted)]">
@@ -158,6 +177,7 @@ export default function Home() {
                   {error}
                 </p>
               )}
+              {message && <p role="status" className="text-sm text-[var(--term-green)]">{message}</p>}
 
               <button
                 type="submit"
