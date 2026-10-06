@@ -42,7 +42,7 @@ export default function Home() {
 
     if (!/^[a-z0-9_]{3,30}$/i.test(username.trim())) return setError("Username must be 3–30 characters: letters, numbers, or underscores.");
     if (mode === "signup" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return setError("Enter a valid email address.");
-    if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/.test(password)) return setError("Password must be at least 8 characters and include uppercase, lowercase, number, and special character.");
+    if (mode === "signup" && !/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/.test(password)) return setError("Password must be at least 8 characters and include uppercase, lowercase, number, and special character.");
 
     setLoading(true);
     try {
