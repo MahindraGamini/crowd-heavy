@@ -6,7 +6,7 @@ import { createSession } from "../../lib/session";
 import { User } from "../../models/user";
 
 export async function POST(req: Request) {
-  const { username, email, password, confirmPassword } = await req.json();
+  const { username, email, password } = await req.json();
   const clean = String(username || "").trim().toLowerCase();
   const cleanEmail = String(email || "").trim().toLowerCase();
 
@@ -22,9 +22,6 @@ export async function POST(req: Request) {
       { error: "Password must be at least 8 characters and include uppercase, lowercase, number, and special character." },
       { status: 400 }
     );
-  }
-  if (password !== confirmPassword) {
-    return NextResponse.json({ error: "Passwords do not match." }, { status: 400 });
   }
 
   await connectDB();
