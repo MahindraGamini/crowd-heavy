@@ -12,7 +12,11 @@ const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
   const httpServer = createServer((req, res) => handle(req, res));
-  const io = new Server(httpServer);
+  const io = new Server(httpServer
+  ,{cors: {
+    origin: "*",
+  }}
+  );
 
   // Share io with API routes (they run in this same process)
   globalThis.io = io;
